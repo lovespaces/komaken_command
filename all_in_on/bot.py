@@ -5,7 +5,6 @@ from typing import List
 intents = discord.Intents.all()
 client = discord.Client(intents = intents)
 tree = discord.app_commands.CommandTree(client)
-gld = discord.Object(id=1130363081428582491)
 
 def CommandInfo(コマンド, e, n):
     emb = discord.Embed(title="")
@@ -182,7 +181,7 @@ class Modal(discord.ui.Modal):
 @client.event
 async def on_ready():
     print('ITS ME')
-    await tree.sync(guild=gld)
+    await tree.sync()
 
 @tree.command(
         name="search", description="コマンドを検索し、結果を表示します。"
@@ -248,9 +247,21 @@ async def search_autocomplete(
     )
 @app_commands.describe(コマンド='編集をするコマンドを選んでください')
 async def add(interaction: discord.Interaction, コマンド: str) -> None:
-    await interaction.response.defer(thinking=True, ephemeral=True)
-    emb, view = ShowConfig(コマンド)
-    await interaction.followup.send(embed=emb, view=view)
+    with open('./data.json', encoding="utf-8") as f:
+        j = json.load(f)
+    for i in j["has_role"]:
+        role = discord.utils.get(interaction.guild.roles, id=i)
+        if role:
+            if role in interaction.user.roles:
+                await interaction.response.defer(thinking=True, ephemeral=True)
+                emb, view = ShowConfig(コマンド)
+                await interaction.followup.send(embed=emb, view=view)
+                return
+            else:
+                continue
+        else:
+            continue
+    await interaction.response.send_message("あなたは権限を持っているロールを所持していません")
 
 @add.autocomplete("コマンド")
 async def add_autocomplete(
